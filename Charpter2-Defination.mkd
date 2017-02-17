@@ -1,0 +1,44 @@
+#定义
+
+下面这些定义将贯穿整个手册：
+
+| | |
+|:------------------|:----------------------------|
+| POSIX |  基于Unix的一组系统标准(open system standard)，Bash主要是符合POSIX 1003.1标准的Shell程序以及工具程序
+|
+|blank| 空格符(' ')或者制表符('\t')
+|
+|control operator| 一个控制函数(control function)的符号(token)，它可以是新的一行，或是下列字符：'||' '&&' '&' ';' ';;' ';&' ';;&' '|' '|&' '(' ')'
+|
+|exit status| 执行命令结束后给调用者的返回值，其大小8bit，也就是最大值为255
+|
+|field| A unit of text that is the result of one of the shell expansions. After expansion,when executing a command, the resulting fields are used as the command name and arguments.
+|
+|filename|文件名
+|
+|job|作业，一群由管道连接的程序
+|
+|job control|作业调度，用户能选择性地停止，重启，暂停，恢复进程的执行
+|
+|metacharacter|锚字符？用来分开单词的，它可以是空格符，制表符，换行符，或者是'&#124;' '&' ';' '(' ')' '&lt;' '&gt;'
+|
+|name| 一个单词，由字母，数字，下划线组成，首字符必须是字母或是下划线。name一般用于shell变量名或者函数名，也可以是标识符
+|
+|operator|操作符，可以是控制操作符，也可以是重定向操作符，具体看3.6节[重定向]，里面又一大堆重定向操作符。操作符至少包括一个锚字符
+|
+|process group| 相关的进程将共同拥有一个进程组ID
+|
+|process group ID|一个表示进程组的标识符，在进程组消亡时会被回收
+|
+|reserved word| 保留字，对shell有特别含义的单词，大部分保留字是控制语句中用到的，比如for while。
+|
+|return status| 同 exit status
+|
+|signal|信号，系统接收到某些事件，将以信号的方式通知进程
+|
+|special builtin|被 POSIX标准 特别分类的内置程序
+|
+|token|在shell中 作为完整单元的一串字符串，它要么是单词，要么是操作符
+|
+|word|在shell中 作为完整单元的一串字符串，单词中不包括未引用的锚字符(words may not include unquoted metacharacters)
+|
