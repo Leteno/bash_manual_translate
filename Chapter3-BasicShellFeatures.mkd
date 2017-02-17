@@ -1,0 +1,73 @@
+#Shell基本功能
+Bash是’Bourne-Again SHell‘的简写。Bourne shell是原始的Unix shell，由Stephen Bourne编写的。所有的Bourne shell内置命令都可以在Bash中使用。”“{The rules for evaluation and quoting are taken from the POSIX specification for the 'standard' Unix shell}
+
+这一章主要概括shell的基石：命令，控制结构，shell函数，shell参数，“shell扩展”{shell expansion}， 重定向(重定向输入输出，读取或写入到文件), 以及一个shell程序怎么执行命令。
+
+##3.1 shell 语法
+shell程序读取命令，执行一系列操作。如果读取到’#‘，它会认为这是一个注释，会忽略‘#’到行尾的所有内容。
+
+粗略的来说，shell程序边读取输入(译：可以把整个sh文件看做输入流)边将输入区分成单词以及操作符，通过判断这些字符单词是否被注释化，决定该赋予这些单词以什么样的含义（译：比如保留字，被引号括起来的保留字）(译：整个过程是词法分析？)
+
+shell程序将词法分析得来的词解析成命令以及其他结构(译：语法分析？)”有删除关于已知单词字符的特定意义“{removes the special meaning of certain words or characters}(译：unset？)也有扩展某些单词字符的含义，有重定向输入输出流，也有执行某些特定的命令，等待某些命令的退出返回值(exit status)，也有让这个退出返回值传递给后续的程序。
+
+###3.1.1 Shell 操作
+下面就是当shell程序读取并执行命令的时候，关于shell操作大致的描述。shell程序主要做如下步骤：
+
+* 1.读取输入，从文件(看3.8节[Shell Scripts])，从字符串（来自 -c 的参数），从用户终端(terminal)
+* 2.将输入切分为单词、操作符(词法分析)，切分遵循3.1.2节[Quoting]介绍的规则。这些切分的块(token)用锚字符(metacharacter)分隔，别名扩展替换(Alias expansion)在这一步执行。
+* 3.将这些块(token)解析成单一的或者组合的命令(详见3.2节[Shell Commands])（语法分析）
+* 4.执行shell扩展(shell expansion)(详见3.5节[Shell Expansions])"将这些块区分成文件名列表(详见3.5.8节[Filename Expansion])命令以及参数"{breaking the expanded tokens into lists of filenames and commands and arguments}
+* 5.执行必要的重定向(详见3.6节[Redirections])，从命令的参数列表中删除重定向操作符以及重定向的位置
+* 6.执行命令(详见3.7节[Executing Commands])
+* 7.(可选)等待命令执行结束，收集退出结束状态(exit status)(详见3.7.5节[Exit Status])
+
+###3.1.2 注释化(quoting)
+注释化(quoting)是用来移除某些字符单词在shell程序中的特殊含义。譬如，用引号可以将某些特殊字符、单词、保留字的含义去掉，单纯是字符串，也用在防止传入的参数过分解读(译：形如 echo "ls 这里不会执行")
+
+每一个shell锚字符(详见第二章[Definitions])在shell中有特别含义，如果想单纯地表示这个字符，也可以用引号括起来。当使用命令 history 扩展功能时(详见9.3节[History Interaction])，history扩展符，通常是'!'，必须要用引号括起来(详见9.1节[Bash Histroy Facilities])
+
+有很多注释化方法：转义字符'\', 单引号'\'', 双引号'\"'
+
+####3.1.2.1 转义字符(Escape Character)
+'\'保留了下一个字符的字面意思。如果'\'后接换行符的话，而且’\'本身没有被注释化("\\")那么这一行将视为未换行，下一行则是这一行后续的补充，也就是说，把换行符从意义上删除掉(译：但是在编辑器中按照有换行符来排列，看起来舒服)
+
+####3.1.2.2 单引号(Single Quotes)
+所有被单引号'括起来的字符都只保留字面意思，通常在单引号内不会出现单引号，不过也可以通过反斜线'\'转义一下，例如 '\''
+
+####3.1.2.3 双引号(Double Quotes)
+所有被双引号""括起来的字符也都只保留字面意思，除了 &dollar; `` \ 以及命令history 扩展打开时的 !. 如果shell程序处于POSIX模式下(详见6.11节[Bash POSIX Mode])! 在双引号下并没有其他特殊含义，即使是命令 history 的扩展打开。字符&dollar; ` 在双引号下仍然保留自身特殊含义。反斜线只有在下列字符前才有特殊含义 &dollar; ` " \ 以及换行符.反斜线可以使得这些字符失去特殊意义。双引号也可以通过被双引号括起来，通过在其前方加入反斜线。
+
+特殊参数 '*' '@' 就算在双引号下也保留特殊意思(详见3.5.3节[Shell Parameter Expansion])
+
+####3.1.2.4 ANSI-C标准的注释化(ANSI-C Quoting)
+形如$’string‘的单词将会被特别对待，它会解析string，字符串内带有转义字符的字符将会通过ANSI-C标准进行替换。替换规则如下：
+
+|code&nbsp;&nbsp;&nbsp;|meaning|
+|:-------|:----|
+|\a|蜂鸣(alert bell)|
+|\b|退格符|
+|\e \E|转义字符(not ANSI C?)|
+|\f|换页符|
+|\n|换行符|
+|\r|回车符|
+|\t|水平制表符|
+|\v|垂直制表符|
+|\\|反斜线|
+|\'|单引号|
+|\"|双引号|
+|\?|问号|
+|\nnn|nnn是八进制数字，如/172 ='z'|
+|\xHH|HH是16进制数字，如/x7A = 'z'|
+|\uHHHH|Unicode编码下的字符，HHHH是16进制数字|
+|\UHHHHHHHH|Unicode编码下的字符，HHHH,HHHH是8进制数字|
+|\cx|control-x字符|
+
+解析的结果是单括号括起来的内容，$不会被输出，就如同它未曾出现一样(译：可以试一下 "echo &dollar;'hello\n'" 与 "echo 'hello\n'"，一切明了)
+
+####3.1.2.5 翻译(Locale-Specific Translation)
+&dollar;"string"则会导致这个string根据当前的语言翻译，如果当前的语言是C或者POSIX，&dollar;符号会被忽略。"如果string被翻译，其结果将包含双引号"{If the string is translated and replaced, the replacement is double-quoted}
+
+Some systems use the message catalog selected by the LC_MESSAGES shell variable. Others create the name of the message catalog from the value of the TEXTDOMAIN shell variable, possibly adding a suffix of '.mo'.If you use the TEXTDOMAIN variable, you may need to set the TEXTDOMAINDIR variable to the location of the message catalog files. Still other use both variables in this fashion: TEXTDOMAINDIR/LC_MESSAGES?LC_MESSAGES/TEXTDOMAIN.mo
+
+###3.1.3 注释(Comments)
+在不支持交互的shell或者支持交互的但是s内置命令shopt interactive_comments选项被打开(详见4.3.2[The Shopt Builtin])，对于以'#'开始的字符都会导致该字符以及后续字符知道到下一行都会被忽略。交互式shell程序如果interactive_comments关闭的话，不支持注释。选项interactive_comments默认在交互式shell是打开的(详见6.3节[Interactive Shells])去看什么导致一个shell程序可交互。
