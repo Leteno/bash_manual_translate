@@ -71,3 +71,36 @@ Some systems use the message catalog selected by the LC_MESSAGES shell variable.
 
 ###3.1.3 注释(Comments)
 在不支持交互的shell或者支持交互的但是s内置命令shopt interactive_comments选项被打开(详见4.3.2[The Shopt Builtin])，对于以'#'开始的字符都会导致该字符以及后续字符知道到下一行都会被忽略。交互式shell程序如果interactive_comments关闭的话，不支持注释。选项interactive_comments默认在交互式shell是打开的(详见6.3节[Interactive Shells])去看什么导致一个shell程序可交互。
+
+##3.2 Shell 命令(Shell Commands)
+
+一个单一的shell命令，形如'echo a b c',包含了shell命令，接着是参数，中间用空格隔开[.]("A simple shell command such as 'echo a b c' consists of the command itself followed by arguments, separated by spaces.")
+
+更加复杂的shell命令是由多个单一命令，通过下面这些方式组合在一起:管道，使得一个命令的输出成下一个命令的输入；循环语句或条件语句；以及其他[=。=]("More complex shell commands are composed of simple commands arranged together in a variety of ways: in a pipeline in which the output of one command becomes the input of a second, in a loop or conditional construct, or in some other grouping.")
+
+###3.2.1 简单命令(Simple Commands)
+
+一个单一命令是最常见的命令[.]("A simple command is the kind of command encountered most often.")  它仅仅是一串单词中间用空白(' '或'\t')隔开，由shell控制字符隔开(详见 [Definitions])[.]("It's just a sequence of words separated by 'blank's, terminated by one of the shell's control operators (*note Definitions::). ") 第一个单词表示要执行的命令名，剩下的单词成为这个命令的参数列表[.]("The first word generally specifies a command to be executed, with the rest of the words being that command's arguments.")
+
+命令执行结束返回状态(详见[Exit Status])等于它的退出结束状态，由POSIX 1003.1 标准中，函数waitpid返回得到，或者是由于信号(signal)N导致程序退出，此时返回值为128+N[.]("The return status (*note Exit Status::) of a simple command is its exit status as provided by the POSIX 1003.1 'waitpid' function, or 128+N if the command was terminated by signal N.")
+
+###3.2.2 管道(Pipeline)
+管道是由同一个或多个命令组成，中间用'|'或'|&'隔开[.]("A 'pipeline' is a sequence of one or more commands separated by one of the control operators '|' or '|&'.")
+
+管道的标准格式是[:]("The format for a pipeline is")
+
+[time [-p]] [!] COMMAND1 [ | or |& COMMAND2 ] ...
+
+通过管道，每一个命令的输出作为下一个命令的输入[.]("The output of each command in the pipeline is connected via a pipe to the input of the next command.")  也就是说，每一个命令从上一个命令中读取输入[.]("That is, each command reads the previous command's output.") [.]("This connection is performed before any redirections specified by the command.")
+
+如果是使用'|&', 那么COMMAND1的标准错误输出跟命令的标准输出一起，通过管道，传递给命令COMMAND2作为它的标准输入，全称应该是'2>&1 |'[.]("If '|&' is used, COMMAND1's standard error, in addition to its standard output, is connected to COMMAND2's standard input through the pipe; it is shorthand for '2>&1 |'.")  只要在命令后面加入这个符号就意味着将标准错误输出(重定向)到标准输出中去[.]("This implicit redirection of the standard error to the standard output is performed after any redirections specified by the command.")(译：这就意味着，标准错误汇入标准输出，然后再由管道'|'，将混合了标准错误的标准输出作为下一方的标准输入)
+
+保留字'time'表示在整个命令结束的时候做时间上的统计[.]("The reserved word 'time'causes timing statistics to be printed for the pipeline once it finishes.") 这个统计包括整个命令执行的真实时间，用户CPU时间以及系统CPU时间[.]("The statistics currently consist of elapsed (wall-clock) time and user and system time consumed by the command's execution.")  -p 选项的作用是将time命令输出的结果按POSIX要求的格式输出[.]("The '-p' option changes the output format to that specified by POSIX.") 当shell程序处于POSIX模式下(详见[Bash POSIX Mode]), 它并不会将time认为是保留字(译:而认为是外部命令,详见本段段末)，如果后面接着'-'的话[.]("When the shell is in POSIX mode (*note Bash POSIX Mode::), it does not recognize 'time' as a reserved word if the next token begins with a '-'.")  环境变量'TIMEFORMAT'可以定义time输出信息的格式(关于格式化变量，详见[Bash Variables])[.]("The 'TIMEFORMAT' variable may be set to a format string that specifies how the timing information should be displayed.  *Note Bash Variables::, for a description of the available
+formats.") time作为一个保留字，提供了给shell内置程序，shell函数，管道一个记录运行时间的方法[.]("The use of 'time' as a reserved word permits the timing of shell builtins, shell functions, and pipelines.")  (译:如果time不是保留字,而是)作为一个外部命令的话，可能就没法这么方便的计算时间了[.]("An external 'time' command cannot time these easily.")
+
+当shell程序处在POSIX模式下(详见[Bash POSIX Mode]), 'time'可能会后接换行符[.]("When the shell is in POSIX mode (*note Bash POSIX Mode::), 'time' may be followed by a newline.") 在这种状态下，time会计算整个程序以及相关子程序总的运行时间[.]("In this case, the shell displays the total user and system time consumed by the shell and its children.") 在这个情况下，变量'TIMEFORMAT'可以标示这个时间输出的格式[.]("The 'TIMEFORMAT' variable may be used to specify the format of the time
+information.")
+
+如果管道并不是异步执行命令的话，shell程序将会等待管道内的程序(译:一个个)执行完毕[.]("If the pipeline is not executed asynchronously (*note Lists::), the shell waits for all commands in the pipeline to complete.")
+
+管道内的每一个命令都会在它自己的子shell程序中执行(译:也就是命令内部的变量环境不会污染到其他命令的环境)(详见[Command Execution Environment])[.]("Each command in a pipeline is executed in its own subshell (*note Command Execution Environment::).") 整个管道的结束状态是最后一个命令的结束状态,除非将'pipefail'选项打开(详见[The Set Builtin])[.]("The exit status of a pipeline is the exit status of the last command in the pipeline, unless the 'pipefail' option is enabled (*note The Set Builtin::).")如果打开'pipefail',管道会返回0，如果所有命令成功退出的话，否则是一个非0的结束状态码[.]("If 'pipefail' is enabled, the pipeline's return status is the value of the last (rightmost) command to exit with a non-zero status, or zero if all commands exit successfully.") 如果保留字'!'出现在整个管道的前面，则是对结束状态码逻辑非了[.]("If the reserved word '!' precedes the pipeline, the exit status is the logical negation of the exit status as described above.") shell程序会等待管道内所有程序结束才会输出返回值[.]("The shell waits for all commands in the pipeline to terminate before returning a value.")
