@@ -104,3 +104,234 @@ information.")
 如果管道并不是异步执行命令的话，shell程序将会等待管道内的程序(译:一个个)执行完毕[.]("If the pipeline is not executed asynchronously (*note Lists::), the shell waits for all commands in the pipeline to complete.")
 
 管道内的每一个命令都会在它自己的子shell程序中执行(译:也就是命令内部的变量环境不会污染到其他命令的环境)(详见[Command Execution Environment])[.]("Each command in a pipeline is executed in its own subshell (*note Command Execution Environment::).") 整个管道的结束状态是最后一个命令的结束状态,除非将'pipefail'选项打开(详见[The Set Builtin])[.]("The exit status of a pipeline is the exit status of the last command in the pipeline, unless the 'pipefail' option is enabled (*note The Set Builtin::).")如果打开'pipefail',管道会返回0，如果所有命令成功退出的话，否则是一个非0的结束状态码[.]("If 'pipefail' is enabled, the pipeline's return status is the value of the last (rightmost) command to exit with a non-zero status, or zero if all commands exit successfully.") 如果保留字'!'出现在整个管道的前面，则是对结束状态码逻辑非了[.]("If the reserved word '!' precedes the pipeline, the exit status is the logical negation of the exit status as described above.") shell程序会等待管道内所有程序结束才会输出返回值[.]("The shell waits for all commands in the pipeline to terminate before returning a value.")
+
+###3.2.3 (Lists of Commands)
+'list'是一个或多个管道通过以下操作符';' '&', '&&'或'||'分隔开所组成的序列，其结尾可以包含';' '&'以及换行符[.]("A 'list' is a sequence of one or more pipelines separated by one of the operators ';', '&', '&&', or '||', and optionally terminated by one of ';', '&', or a 'newline'.")
+
+在这些list的操作符当中，'&&' '||'都有着相同的优先级，往后则是也有相同优先级的';'与'&'[.]("Of these list operators, '&&' and '||' have equal precedence, followed by ';' and '&', which have equal precedence.")
+
+多个换行符可能会出现在list中去分开里面的命令，它的功能相当于';'[.]("sequence of one or more newlines may appear in a 'list' to delimit commands, equivalent to a semicolon.")
+
+如果命令末尾是控制符'&'的话，shell程序会在子shell程序中异步执行该命令[.]("If a command is terminated by the control operator '&', the shell executes the command asynchronously in a subshell.")  这个就是众所周知的后台执行程序[.]("This is known as executing the command in the BACKGROUND.") shell程序并不会在这等待命令结束，而且立即返回返回状态码是0(true)[.]("The shell does not wait for the command to finish, and the return status is 0 (true).") 当没有打开作业调度(详见[Job Control])，对于异步命令的标准输入，所有显式的重定向将无效，而是从'/dev/null'中读取(译:which is 无数据)[.]("When job control is not active (*note Job Control::), the standard input for asynchronous commands, in the absence of any explicit redirections, is
+redirected from '/dev/null'.")
+
+而用';'隔开的命令则是顺序执行[;]("Commands separated by a ';' are executed sequentially;") shell程序等待每个命令一个接一个的执行结束[.]("the shell waits for each command to terminate in turn.") 最终的返回状态码就是最后一个命令的结束状态码[.]("The return status is the exit status of the last command executed.")
+
+AND与OR list是一个或多个管道序列通过控制符'&&'与'||'分别隔开[.]("AND and OR lists are sequences of one or more pipelines separated by the control operators '&&' and '||', respectively.") AND与OR list执行顺序是左相关的[.]("AND and OR lists are executed with left associativity.")(译: 左相关的意思是可以看作是有个括号将命令A与左边的命令B括起来作为一组(group))
+
+AND list有着以下的形式[:]("An AND list has the form")<br/>
+     COMMAND1 && COMMAND2
+
+COMMAND2只有在COMMAND1的结束状态码是0的时候才会被执行[.]("COMMAND2 is executed if, and only if, COMMAND1 returns an exit status of zero.")
+
+OR list有着以下的形式[:]("An OR list has the form")<br/>
+     COMMAND1 || COMMAND2
+
+COMMAND2只会在COMMAND1的结束状态码不是0的时候才会执行[.]("COMMAND2 is executed if, and only if, COMMAND1 returns a non-zero exit
+status.")
+
+AND与OR lists返回状态码都是他们最后一个命令的结束状态码[.]("The return status of AND and OR lists is the exit status of the last command executed in the list.")
+
+###3.2.4 组合命令 Compound Commands
+组合命令是shell编程的组成模块[.]("Compound commands are the shell programming constructs.") 每一个模块都以保留字或控制符为开始，以对应的保留字或控制符为结束[.]("Each construct begins with a reserved word or control operator and is terminated by a corresponding reserved word or operator.") 所有与组合命令相关的重定向(详见[Redirections])都适用于组合命令内的所有命令，除非里面有显式的覆盖[.]("Any redirections (*note Redirections::) associated with a compound command apply to all commands within that compound command unless explicitly overridden.")
+
+在大多数情况下，组合命令的命令列表的表达式之间可能会被换行分隔开，可能会用换行符替代分号[.]("In most cases a list of commands in a compound command's description may be separated from the rest of the command by one or more newlines, and may be followed by a newline in place of a semicolon.")
+
+Bash提供了循环语句，条件命令以及一种能够组织命令让他们作为一个单元执行的方法[.]("Bash provides looping constructs, conditional commands, and mechanisms to group commands and execute them as a unit.")
+
+####3.2.4.1 循环结构Looping Constructs
+
+Bash支持以下循环结构[.]("Bash supports the following looping constructs.")
+
+注意到不管分号出现在命令的哪一处，它都可以用换行符来替代[.]("Note that wherever a ‘;’ appears in the description of a command’s syntax, it may be replaced with one or more newlines.")
+
+until
+until语句的用法是[:]("The syntax of the until command is:")
+
+```
+until test-commands; do consequent-commands; done
+```
+只要test-commands条件的结束状态值不为0，那么就一直执行consequent-commands[.]("Execute consequent-commands as long as test-commands has an exit status which is not zero.") 整个语句的返回状态值是consequent-commands最后一个命令执行结束状态值[,]("The return status is the exit status of the last command executed in consequent-commands, ")如果consequent-commands一次都没执行，那么返回0[.]("or zero if none was executed.")
+
+while
+while语句的用法是[:]("The syntax of the while command is:")
+```
+while test-commands; do consequent-commands; done
+```
+只要test-commands结束状态值为0，那么就一直执行consequent-commands[.]("Execute consequent-commands as long as test-commands has an exit status of zero.")(译: 与until正好相反) (译: 而与util相同的是)整个语句的返回状态值是consequent-commands最后一个命令执行结束状态值[,]("The return status is the exit status of the last command executed in consequent-commands,") 如果consequent-commands一次都没执行，那就返回0[.]("or zero if none was executed.")
+
+for
+for语句的用法是[:]("The syntax of the for command is:")
+```
+for name [ [in [words …] ] ; ] do commands; done
+```
+将words展开，对words内每一个成员都执行一次commands操作，commands内可以通过name读取到当前的成员是什么[.]("Expand words, and execute commands once for each member in the resultant list, with name bound to the current member.") 如果不使用'in words', 默认取'in "&dollar;@"'(详见 Special Parameters)[.]("If ‘in words’ is not present, the for command executes the commands once for each positional parameter that is set, as if ‘in "$@"’ had been specified (see Special Parameters).") (译: 与上面相同)整个语句的返回状态值是commands里面最后一个命令执行的结束状态值[,]("The return status is the exit status of the last command that executes.") 如果words里面一个成员都没有的话，commands一次都不执行，返回状态值是0[.]("If there are no items in the expansion of words, no commands are executed, and the return status is zero.")
+
+for语句也有另外一种形式[:]("An alternate form of the for command is also supported:")
+```
+for (( expr1 ; expr2 ; expr3 )) ; do commands ; done
+```
+首先，算术表达式expr1会根据下面的规则执行(详见 Shell Arithmetic)[.]("First, the arithmetic expression expr1 is evaluated according to the rules described below (see Shell Arithmetic).") 算术表达式会重复执行直到它的值为0[.]("The arithmetic expression expr2 is then evaluated repeatedly until it evaluates to zero.") 每当expr2值不为0的时候，都会执行一遍commands接着expr3[.]("Each time expr2 evaluates to a non-zero value, commands are executed and the arithmetic expression expr3 is evaluated.") 如果这里面任意的expr为空的话，那么默认值是1(译: 也就是说如果expr2为空的话，将会一直执行整个语句)[.]("If any expression is omitted, it behaves as if it evaluates to 1.") 整个语句的返回值是commands内最后一个执行的命令的结束状态值[,]("The return value is the exit status of the last command in commands that is executed,") 如果任意一个expr是非法的话返回false(译: 存疑)[.]("or false if any of the expressions is invalid.")
+
+内置命令(详见: Bourne Shell Builtins)break以及continue可以在循环语句内控制循环的执行[.]("The break and continue builtins (see Bourne Shell Builtins) may be used to control loop execution.")
+
+(译：
+```
+name=1
+for(( name=2; 0; ))
+do
+    
+done
+echo name is $name
+```
+结果是 name is 2
+)
+
+####3.2.4.2 条件语句 Conditional Constructs
+
+if
+if语句的结构如下[:]("The syntax of the if command is:")
+```
+if test-commands; then
+  consequent-commands;
+[elif more-test-commands; then
+  more-consequents;]
+[else alternate-consequents;]
+fi
+```
+如果test-commands返回值是0的话，执行consequent-commands[.]("The test-commands list is executed, and if its return status is zero, the consequent-commands list is executed.") 如果test-commands返回一个非0值的话，则会判断一下more-test-commands，如果它返回值是0，则执行more-consequents，否则else语句内的alternate-consequents会被执行[.]("If test-commands returns a non-zero status, each elif list is executed in turn, and if its exit status is zero, the corresponding more-consequents is executed and the command completes.") 如果语句附带'else alternate-consequents'以及if判断以及elif判断返回一个非0值，那么alternate-consequents会被执行[.]("If ‘else alternate-consequents’ is present, and the final command in the final if or elif clause has a non-zero exit status, then alternate-consequents is executed.") 整个语句的返回值是最后一个执行的命令的结束状态值，如果一个条件都不符合的话，返回0[.]("The return status is the exit status of the last command executed, or zero if no condition tested true.")
+
+case
+case语句的结构如下[:]("The syntax of the case command is:")
+
+```
+case word in [ [(] pattern [| pattern]…) command-list ;;]… esac
+```
+case语句会选择性的执行第一个pattern能够match上words的后面接的语句[.]("case will selectively execute the command-list corresponding to the first pattern that matches word.")
+(译: 形如
+```
+#!/bash/sh                                                             
+name=zheng
+case $name in
+    abc | efg)
+        echo more effort may not bring better result;;
+    zh*)
+        echo near the captital, get princess early, but first...;;
+    zheng)
+        echo best match, far water cannot save near fire, OvO;;
+    *)
+        echo final boss, I will deal the rest if you can't.
+esac
+echo finish
+```
+结果是：
+near the captital, get princess early, but first...
+finish
+由于zh\*是第一个能够match上zheng的所以执行zh\*的语句) 如果shell程序nocasematch选项(详见shopt的定义: The Shopt Builtin)被打开的话[,]("If the nocasematch shell option (see the description of shopt in The Shopt Builtin) is enabled,") 那么匹配(match)就忽略字母的大小写[.]("the match is performed without regard to the case of alphabetic characters.") 字符'|'用来分开多个pattern的[,]("The ‘|’ is used to separate multiple patterns,") 以及')'表示整个pattern列表的结束[.]("and the ‘&#41;’ operator terminates a pattern list.") 一个pattern列表以及它相关的command-list为一个分句[.]("A list of patterns and an associated command-list is known as a clause.")
+
+每个分句必须以';;' ';&' 或者 ';;&' 结束[.]("Each clause must be terminated with ‘;;’, ‘;&’, or ‘;;&’.") The word undergoes tilde expansion, parameter expansion, command substitution, arithmetic expansion, and quote removal before matching is attempted. Each pattern undergoes tilde expansion, parameter expansion, command substitution, and arithmetic expansion.
+
+这里可以有任意多个分句，每个分句必须以';;' ';&' 或 ';;&'结尾[.]("There may be an arbitrary number of case clauses, each terminated by a ‘;;’, ‘;&’, or ‘;;&’.") 第一个匹配上的pattern，它的commands-list将会被执行[.]("The first pattern that matches determines the command-list that is executed.")    使用'\*'作为最后的pattern是非常常见的用法,相当于c语言switch case里面的default: [.]("It’s a common idiom to use ‘*’ as the final pattern to define the default case, since that pattern will always match.")
+
+这里是一个case语句的例子，用来描述一个动物的有趣的特点[:]("Here is an example using case in a script that could be used to describe one interesting feature of an animal:")
+```
+echo -n "Enter the name of an animal: "
+read ANIMAL
+echo -n "The $ANIMAL has "
+case $ANIMAL in
+  horse | dog | cat) echo -n "four";;
+  man | kangaroo ) echo -n "two";;
+  *) echo -n "an unknown number of";;
+esac
+echo " legs."
+```
+如果用的是';;'作为分句结尾，那么只要这个pattern匹配上了，接下来就没下面其他分句的事了[.]("If the ‘;;’ operator is used, no subsequent matches are attempted after the first pattern match.") 如果用的是';&'，则会在pattern匹配上后继续执行下一个分句的命令(译: 一人得道, 鸡犬升天)[.]("Using ‘;&’ in place of ‘;;’ causes execution to continue with the command-list associated with the next clause,") 如果用的是';;&',那么会在pattern匹配上后继续往下找下一个匹配项，执行里面的语句(译: 类似于interceptor，一般放在case中的第一个pattern)[.]("if any. Using ‘;;&’ in place of ‘;;’ causes the shell to test the patterns in the next clause, if any, and execute any associated command-list on a successful match.")
+
+整个语句的返回值，如果一个pattern都匹配不上的话，为0，否则，返回值将是最后一个执行的命令的结束状态值[.]("The return status is zero if no pattern is matched. Otherwise, the return status is the exit status of the command-list executed.")
+
+select
+select结构是对菜单选项一个简单的实现[.]("The select construct allows the easy generation of menus.") 它的语法与for相似[:]("It has almost the same syntax as the for command:")
+```
+select name [in words …]; do commands; done
+```
+in words 会被扩展，表示words内的每个成员[.]("The list of words following in is expanded, generating a list of items.") 对于每个成员都会一行行输出到标准错误流(译: 作为提示框)，每个成员前面会有一个序号[.]("The set of expanded words is printed on the standard error output stream, each preceded by a number.") 如果'in words'被忽略的话，默认是'in "&dollar;@"'[.]("If the ‘in words’ is omitted, the positional parameters are printed, as if ‘in "$@"’ had been specified.") (译:带有序号的)提示框显示，程序等待从标准输入中读取一行[.]("The PS3 prompt is then displayed and a line is read from the standard input.") 如果读取的这行是一个数字，而这个数字在提示框里面的序号，那么name的值为这个序号所代表的条目的内容[.]("If the line consists of a number corresponding to one of the displayed words, then the value of name is set to that word.") 如果输入行为空，那么提示会再次显示[.]("If the line is empty, the words and prompt are displayed again.") 如果读取到EOF(译: End Of File, ctrl+D), select语句结束[.]("If EOF is read, the select command completes.") 除此之外的输入会使name的值为空[.]("Any other value read causes name to be set to null.") 读取的这一行将会保存在变量REPLY中[.]("The line read is saved in the variable REPLY.")
+
+commands将会在每次的selection之后执行，循环直到执行了break命令(译: 或者输入为EOF)[.]("The commands are executed after each selection until a break command is executed, at which point the select command completes.")
+
+下面是一个例子，让用户在当前的目录下选择文件，然后把这个文件名以及它的序号输出[.]("Here is an example that allows the user to pick a filename from the current directory, and displays the name and index of the file selected.")
+```
+select fname in *;
+do
+	echo you picked $fname \($REPLY\)
+	break;
+done
+```
+
+((…))
+```
+(( expression ))
+```
+算术表达式expression会以下面描述的规则计算(详见 Shell Arithmetic)[.]("The arithmetic expression is evaluated according to the rules described below (see Shell Arithmetic).") 如果expression的值非0，那么语句返回值为0[,]("If the value of the expression is non-zero, the return status is 0;") 否则，返回值为1[.]("otherwise the return status is 1.") 这个等价于[:]("This is exactly equivalent to")
+```
+let "expression"
+```
+关于内置命令let, 更多详见 Bash Builtins[.]("See Bash Builtins, for a full description of the let builtin.")
+
+[[…]]
+```
+ [[ expression ]]
+```
+取决于条件expression的执行返回0或1[.]("Return a status of 0 or 1 depending on the evaluation of the conditional expression expression.") Expressions are composed of the primaries described below in Bash Conditional Expressions. Word splitting and filename expansion are not performed on the words between the [[ and ]]; tilde expansion, parameter and variable expansion, arithmetic expansion, command substitution, process substitution, and quote removal are performed. Conditional operators such as ‘-f’ must be unquoted to be recognized as primaries.
+
+在使用[[的时候，操作符'&lt;' '&gt;'基于当前的语言按字典序比较(sort)[.]("When used with [[, the ‘<’ and ‘>’ operators sort lexicographically using the current locale.")
+
+当使用操作符'==' '!='，操作符右边的字符串可以是一个pattern(译: 也就是如果match，则==)，当然这个需要shell程序打开选项 extglob[.]("When the ‘==’ and ‘!=’ operators are used, the string to the right of the operator is considered a pattern and matched according to the rules described below in Pattern Matching, as if the extglob shell option were enabled.") 操作符'='在此处等价于'=='(译: 前提是'='前后有空格符, 即 'a=3' 会被视为赋值语句)[.]("The ‘=’ operator is identical to ‘==’.") 如果shell程序选项nocasematch被打开(详见: The Shopt Builtin), 匹配则是会忽略字母的大小写[.]("If the nocasematch shell option (see the description of shopt in The Shopt Builtin) is enabled, the match is performed without regard to the case of alphabetic characters.") 如果字符串匹配('==')的话，则返回值为0, 否则为1[.]("The return value is 0 if the string matches (‘==’) or does not match (‘!=’)the pattern, and 1 otherwise.") pattern的任意部分可以quoted，强制让quoted的部分作为纯字符串(译: 而不是正则表达式)[.]("Any part of the pattern may be quoted to force the quoted portion to be matched as a string.")
+
+有个bit级操作符 '=~'，与'==' '!='同个优先级[.]("An additional binary operator, ‘=~’, is available, with the same precedence as ‘==’ and ‘!=’.") 使用它的时候，右边的字符串会被认为是扩展正则表达式(extended regular expression)[.]("When it is used, the string to the right of the operator is considered an extended regular expression and matched accordingly (as in regex3)).") 返回值为0如果匹配上，否则1[.]("The return value is 0 if the string matches the pattern, and 1 otherwise.") 如果正则表达式语法上不正确，条件表达式返回值为2(译: 正好是错误流2)[.]("If the regular expression is syntactically incorrect, the conditional expression’s return value is 2.") 如果shell程序选项nocasematch被打开(详见: The Shopt Builtin), 那么匹配时会忽略大小写[.]("If the nocasematch shell option (see the description of shopt in The Shopt Builtin) is enabled, the match is performed without regard to the case of alphabetic characters.") pattern内任意部分都可以被quoted，被quoted的部分将会被认为是普通字符串[.]("Any part of the pattern may be quoted to force the quoted portion to be matched as a string.") 在正则表达式中的括号表达式必须小心对付，因为在括号中，quote操作符将失效[.]("Bracket expressions in regular expressions must be treated carefully, since normal quoting characters lose their meanings between brackets.") 如果pattern存放在shell变量中，quote这个变量会导致整个pattern退化为普通纯字符串[.]("If the pattern is stored in a shell variable, quoting the variable expansion forces the entire pattern to be matched as a string.") Substrings matched by parenthesized subexpressions within the regular expression are saved in the array variable BASH_REMATCH. BASH_REMATCH序号为0的单元是能匹配上整个正则表达式的字符串[.]("The element of BASH_REMATCH with index 0 is the portion of the string matching the entire regular expression.") The element of BASH_REMATCH with index n is the portion of the string matching the nth parenthesized subexpression.
+
+例如，下面会match存储在line内的字符串，如果这个字符串包含若干个空格，接着0或1个'a'，接着一个'b'[:]("For example, the following will match a line (stored in the shell variable line) if there is a sequence of characters in the value consisting of any number, including zero, of space characters, zero or one instances of ‘a’, then a ‘b’:")
+```
+[[ $line =~ [[:space:]]*(a)?b ]]
+```
+这意味着像'aab' 'aaaaaab'会被匹配，也就是一个字符串只要包含b, 不管在何处, 都会匹配这个pattern[.]("That means values like ‘aab’ and ‘ aaaaaab’ will match, as will a line containing a ‘b’ anywhere in its value.")
+
+将正则表达式存放在一个shell变量中是常见的方法，防止了quote字符对正则表达式的破坏[.]("Storing the regular expression in a shell variable is often a useful way to avoid problems with quoting characters that are special to the shell.") 有时候，很难去使用正则表达式内不包含任何quote字符[,]("It is sometimes difficult to specify a regular expression literally without using quotes,") 或者去追踪正则表达式内quote字符的使用[.]("or to keep track of the quoting used by regular expressions while paying attention to the shell’s quote removal. 使用shell变量存储pattern将减少这样的问题[.]("Using a shell variable to store the pattern decreases these problems.") 例如, 下面的语句等价于上方的语句[:]("For example, the following is equivalent to the above:")
+```
+pattern='[[:space:]]*(a)?b'
+[[ $line =~ $pattern ]]
+```
+如果你想匹配上一个在正则表达式语法中非常特殊的字符时, 我们一般使用quote字符去除掉里面的特殊含义[.]("If you want to match a character that’s special to the regular expression grammar, it has to be quoted to remove its special meaning.") 这就意味着像pattern 'xxx.txt', 字符'.'匹配任意字符(在正则表达式里)，但是在这个情况，我们只希望'.'匹配上的仅仅是纯字符'.'[.]("This means that in the pattern ‘xxx.txt’, the ‘.’ matches any character in the string (its usual regular expression meaning), but in the pattern ‘"xxx.txt"’ it can only match a literal ‘.’.") Shell程序员应该留意反斜线'\\', 因为反斜线会将后接的字符的特殊含义去掉(quote), 而作为一个纯字符[.]("Shell programmers should take special care with backslashes, since backslashes are used both by the shell and regular expressions to remove the special meaning from the following character.") 接着两对命令并非等价[:]("The following two sets of commands are not equivalent:")
+```
+pattern='\.'
+
+[[ . =~ $pattern ]]
+[[ . =~ \. ]]
+
+[[ . =~ "$pattern" ]]
+[[ . =~ '\.' ]]
+```
+第一对匹配会成功，但是第二对则不会[,]("The first two matches will succeed, but the second two will not,") 因为在第二对中, 反斜线将会作为pattern内的一部分(译: 也就是纯字符变成'\\.', 而不是'.')[.]("because in the second two the backslash will be part of the pattern to be matched.") 在第一对匹配中，反斜线会把'.'的特殊含义去除, 所以纯字符 . 能匹配上[.]("In the first two examples, the backslash removes the special meaning from ‘.’, so the literal ‘.’ matches.") 如果第一对中的字符不是'.' 而是其他，例如'a'，pattern也是不能匹配上, 因为'.'已经被quote了，失去了它能匹配任意字符这一特殊含义[.]("If the string in the first examples were anything other than ‘.’, say ‘a’, the pattern would not match, because the quoted ‘.’ in the pattern loses its special meaning of matching any single character.") (译: 但是第二对更是匹配不上了, 它应该匹配类似于'\\a' '\\b'的字符串)
+
+表达式(Expression)可能包含下面的操作符[,]("Expressions may be combined using the following operators,") 优先级依次是[:]("listed in decreasing order of precedence:")
+
+```
+( expression )
+```
+返回expression的值[.]("Returns the value of expression.") 这里面可能会用来修改优先级(译: 即类似于5*(1+2))[.]("This may be used to override the normal precedence of operators.")
+
+```
+! expression
+```
+True 如果表达式为false[.]("True if expression is false.")
+
+```
+expression1 && expression2
+```
+True 如果expression1 expression2都为True[.]("True if both expression1 and expression2 are true.")
+
+```
+expression1 || expression2
+```
+True 如果expression1 expression2任意一个为true[.]("True if either expression1 or expression2 is true.")
+
+操作符&& || 可能不会计算expression2，如果expression1已经足够去决定整一个语句的True False时[.]("The && and || operators do not evaluate expression2 if the value of expression1 is sufficient to determine the return value of the entire conditional expression.") (译: 形如 false && a==b, true || c==d, 后者值为多少已经不重要了，论队友的重要性= =)
