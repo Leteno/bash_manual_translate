@@ -1,0 +1,26 @@
+#2 定义(Definitions)
+
+下面这些定义将贯穿整个手册[:]("These definitions are used throughout the remainder of this manual.")
+
+| | |
+|:------------------|:----------------------------|
+| POSIX |  基于Unix的一组系统标准(open system standard)[,]("A family of open system standards based on Unix.") Bash主要是满足POSIX 1003.1标准关于Shell程序以及工具程序这一部分[.]("Bash is primarily concerned with the Shell and Utilities portion of the POSIX 1003.1 standard.")|
+|blank| 空格符(' ')或者制表符('\t')[.]("A space or tab character.")|
+|builtin|shell程序自身内部实现的命令，而不需由文件系统中任意外部程序实现的[.]("A command that is implemented internally by the shell itself, rather than by an executable program somewhere in the file system.")|
+|control operator| 控制函数(control function)的符号(token)[.]("A token that performs a control function.") 它可以是换行符(newline)，或是下列字符：'&#124;&#124;' '&&' '&' ';' ';;' ';&' ';;&' '&#124;' '&#124;&' '(' ')'[.]("It is a newline or one of the following: ‘&#124;&#124;’, ‘&&’, ‘&’, ‘;’, ‘;;’, ‘;&’, ‘;;&’, ‘&#124;’, ‘&#124;&’, ‘(’, or ‘)’.")|
+|exit status| 命令执行结束后给调用者的返回值[,]("The value returned by a command to its caller.") 其大小8bit，也就是最大值为255[.]("The value is restricted to eight bits, so the maximum value is 255.")|
+|field| A unit of text that is the result of one of the shell expansions. After expansion,when executing a command, the resulting fields are used as the command name and arguments.|
+|filename|文件名[.]("A string of characters used to identify a file.")|
+|job|作业，里面包含管道以及任意程序，共用着一个进程组[.]("A set of processes comprising a pipeline, and any processes descended from it, that are all in the same process group.")|
+|job control|作业调度，用户能选择性地停止，重启，暂停，恢复进程的执行[.]("A mechanism by which users can selectively stop (suspend) and restart (resume) execution of processes.")|
+|metacharacter|锚字符？用来unquote 分开单词的[.]("A character that, when unquoted, separates words.") 它可以是空格符，制表符，换行符，或者是'&#124;' '&' ';' '(' ')' '&lt;' '&gt;'[.]("A metacharacter is a space, tab, newline, or one of the following characters: ‘&#124;’, ‘&’, ‘;’, ‘(’, ‘)’, ‘<’, or ‘>’.")|
+|name| 一个单词，由字母，数字，下划线组成，首字符必须是字母或是下划线[.]("A word consisting solely of letters, numbers, and underscores, and beginning with a letter or underscore.") name一般用于shell变量名或者函数名，也可以是标识符[.]("Names are used as shell variable and function names. Also referred to as an identifier.")|
+|operator|操作符，可以是控制操作符，也可以是重定向操作符[.]("A control operator or a redirection operator.")(详见[Redirections],里面有一系列重定向操作符[.]("See Redirections, for a list of redirection operators. ")) 操作符至少包括一个未被quote的锚字符[.]("Operators contain at least one unquoted metacharacter.")|
+|process group| 一组相关的进程集合，其共用进程组ID[.]("A collection of related processes each having the same process group ID.")|
+|process group ID|标识进程组的，独一无二的标识符，在进程组消亡时会被回收[.]("A unique identifier that represents a process group during its lifetime.")|
+|reserved word| 保留字，对shell有特别含义的单[.]("A word that has a special meaning to the shell.") 大部分保留字是控制语句中用到的，比如for while[.]("Most reserved words introduce shell flow control constructs, such as for and while.")|
+|return status| 同 exit status [.]("A synonym for exit status.")|
+|signal|信号，系统接收到某些事件，将以信号的方式通知进程[.]("A mechanism by which a process may be notified by the kernel of an event occurring in the system.")|
+|special builtin|被 POSIX标准 特别划分的内置程序[.]("A shell builtin command that has been classified as special by the POSIX standard.")|
+|token|在shell中 被视为单一个体的一串字符串，它要么是单词，要么是操作符[.]("A sequence of characters considered a single unit by the shell. It is either a word or an operator.")|
+|word|在shell中 被视为完整单元的一串字符串，单词中不包括未quote的锚字符[.]("A sequence of characters treated as a unit by the shell. Words may not include unquoted metacharacters.")|

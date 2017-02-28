@@ -1,25 +1,26 @@
-#前言
+#前言 Introduction
 
-##什么是Bash？
-对于GNU操作系统来说，Bash是一种shell，或者是命令行语言解释程序。这个名字是由‘Bourne-Again SHell’简写而来，而Bourne指代Stephen Bourne，目前Unix shell的祖先，sh的作者，而sh则出现在贝尔实验室研究版第七版的Unix系统中。
+##1.1 什么是Bash[？]("What is Bash?")
 
-Bash极大地兼容sh，吸收了Korn shell(ksh), C shell(csh)的一些有用的功能，旨在成为IEEE提出的POSIX规范中的 标准化shell以及工具(POSIX Shell and Tools) 符合这一规范的shell工具。它在sh基础上，在用户交互以及编程方面，提供了一写功能上的改善。
+对于GNU操作系统来说，Bash是一种shell，或者是命令行语言解释程序[.]("Bash is the shell, or command language interpreter, for the GNU operating system.") 这个名字是由‘Bourne-Again SHell’简写而来[,]("The name is an acronym for the ‘Bourne-Again SHell’,") 而Bourne调侃了Stephen Bourne[,]("a pun on Stephen Bourne,") 他是目前Unix shell的前身 sh的作者，而sh则出现在贝尔实验室研究版Unix系统第七版中[.]("the author of the direct ancestor of the current Unix shell sh, which appeared in the Seventh Edition Bell Labs Research version of Unix.")
 
-GNU操作系统当然也会提供其他的shell程序(比如csh)，Bash是默认shell。跟其他的GNU软件一样，Bash也是具有很高的可移植性（portable）它可以运行在几乎所有版本的Unix等操作系统上，甚至是MS-DOS，OS/2， 以及Windows平台上。
+Bash极大地兼容sh，吸收了Korn shell(ksh), C shell(csh)的一些有用的功能[,]("Bash is largely compatible with sh and incorporates useful features from the Korn shell ksh and the C shell csh.") 旨在成为符合IEEE提出的POSIX规范中的 标准化shell以及工具(POSIX Shell and Tools) 这一规范的shell工具[.]("It is intended to be a conformant implementation of the IEEE POSIX Shell and Tools portion of the IEEE POSIX specification (IEEE Standard 1003.1).") 它在sh基础上，对用户交互以及编程方面，提供了一些功能性改善[.]("It offers functional improvements over sh for both interactive and programming use.")
+
+GNU操作系统当然也会提供其他的shell程序(比如csh)，Bash则是默认shell程序[.]("While the GNU operating system provides other shells, including a version of csh, Bash is the default shell.")跟其他的GNU软件一样，Bash也是具有很高的可移植性[.]("Like other GNU software, Bash is quite portable.") 目前，它可以运行在几乎所有版本的Unix操作系统上, 以及MS-DOS，OS/2等Windows平台上[.]("It currently runs on nearly every version of Unix and a few other operating systems - independently-supported ports exist for MS-DOS, OS/2, and Windows platforms.")
 
 
-##什么是shell？
-本来，shell程序只是执行命令的一个微处理器。微处理器意味着支持由文字，符号组成的更大的表达式。
+##1.2 什么是shell[？]("What is a shell?")
+本来，shell程序只是一个宏处理器, 用来执行命令的[.]("At its base, a shell is simply a macro processor that executes commands.")宏处理器意味着里面有着这样的功能: 支持由文字，符号组成的更大的表达式[.]("The term macro processor means functionality where text and symbols are expanded to create larger expressions.")
 
-Unix shell，既是一个命令解释型程序，也是一种编程语言。作为命令解释型程序，shell给用户提供了接口去使用GNU的工具程序(GNU utilities)。shell又是一种编程语言，在这里面支持用户”拼凑“这些工具程序(也就是命令)，以实现某些用户想要的功能A，而编写出来的程序又成为新的命令(比如在实现功能A基础上添加B的功能可以使用这个新命令作为拼凑元件)。这些存放在/bin等系统目录($PATH)下的新命令，跟与之同目录的系统文件一样，组成了用户去执行命令的环境，命令行上下文。
+Unix shell，既是一个命令解释型程序，也是一种编程语言[.]("A Unix shell is both a command interpreter and a programming language.") 作为命令解释型程序，shell给用户提供了接口去使用GNU工具程序[.]("As a command interpreter, the shell provides the user interface to the rich set of GNU utilities. ") shell又是一种编程语言，在这里面支持用户”组合“这些工具程序[.]("The programming language features allow these utilities to be combined. ")(译: 组合出来的程序又成了新的工具, unix哲学也是工具组合的哲学)可以创建一个文件，里面包含命令组合，而这个文件也变成了一个新的命令了[.]("Files containing commands can be created, and become commands themselves.") 新的命令又跟系统命令(一般存放在/bin目录下)一样拥有同等地位[,]("These new commands have the same status as system commands in directories such as /bin")(译: 同样的环境变量，上下文) 允许用户或用户组为自己的task建立自己自定义的环境变量[.]("allowing users or groups to establish custom environments to automate their common tasks.")
 
-Shell可以交互式或者非交互式使用。譬如，程序通过接受键盘输入，与用户交互；shell也可以只是执行从文件读取到的命令行，并没有与用户交互。
+Shell可以人机交互式或者非交互式地用[.]("Shells may be used interactively or non-interactively.") 在人机交互式下，程序接受键盘输入[.]("In interactive mode, they accept input typed from the keyboard.") 非交互式下，程序直接执行一个文件内的命令[.]("When executing non-interactively, shells execute commands read from a file.") (译: 就类似于打开python后 >>> 与 直接python foo.py 的区别)
 
-Shell允许同步或者异步执行GNU命令。比如，shell等待命令执行结束前不接受任何输入，shell也可以在一个异步程序未结束的同时读并执行额外的命令。重定向允许对这些命令的输入输出做出细粒度的控制。还有，shell允许对命令行执行环境上下文的控制。
+Shell允许同步或者异步执行GNU命令[.]("A shell allows execution of GNU commands, both synchronously and asynchronously.") 比如，shell等待命令执行结束前不接受任何输入[;]("The shell waits for synchronous commands to complete before accepting more input;") shell也可以在一个异步命令未结束的同时并行地读取命令并执行[.]("asynchronous commands continue to execute in parallel with the shell while it reads and executes additional commands. ") 重定向允许对这些命令的输入输出进行细粒度的控制[.]("The redirection constructs permit fine-grained control of the input and output of those commands.") 还有，shell允许控制命令执行的环境上下文[.]("Moreover, the shell allows control over the contents of commands’ environments.")
 
-Shell也提供了一部分内置命令(built-in)，去实现通过其他工具程序无法提供的或是使用起来不方便的功能。例如，命令cd break continue，exec，这些命令不能脱离shell使用，因为这些命令本身就直接操作在shell上的。命令history，getopts，kill，pwd，是可以被其他工具程序使用，但是没shell使用起来方便。这些命令在后面的章节将会详细地讲。
+Shell也提供了一小部分内置命令(built-in)，去实现一些功能，这些功能是通过其他独立的工具程序所无法提供的或是不方便获取的[.]("Shells also provide a small set of built-in commands (builtins) implementing functionality impossible or inconvenient to obtain via separate utilities. ") 例如，命令cd break continue，exec，这些命令不能脱离shell使用，因为这些命令本身就是直接操作在shell上的[.]("For example, cd, break, continue, and exec cannot be implemented outside of the shell because they directly manipulate the shell itself.") 命令history，getopts，kill，pwd，是可以用其他独立的工具程序实现，但是没shell内置程序用起来方便[.]("The history, getopts, kill, or pwd builtins, among others, could be implemented in separate utilities, but they are more convenient to use as builtin commands.") 上述这些内置命令在后面的章节将会详细地讲[.]("All of the shell builtins are described in subsequent sections.")
 
-不仅仅是能执行命令，shell最大的威力(或者说复杂性)在于它内嵌的编程语言。跟其他高级语言一样，shell语言提供了变量，控制流程，引用(quoting)，以及函数。
+仅仅是执行命令，太小菜一碟了，shell最大的威力(或者说复杂性)在于它内嵌的编程语言[.]("While executing commands is essential, most of the power (and complexity) of shells is due to their embedded programming languages.") 跟其他高级语言一样，shell语言提供了变量，控制流程，quote，以及函数[.]("Like any high-level language, the shell provides variables, flow control constructs, quoting, and functions.")
 
-Shell将功能组合在一起完成交互式功能，而不是去往编程语言里面新增其他东西。这些交互式功能包括作业控制，命令行编辑，命令行历史记录，以及别名。这些功能将会在本手册中详细说明。
+Shell提供了精心安排的用于交互式的功能, 而无需再往编程语言里面增添新的东西[.]("Shells offer features geared specifically for interactive use rather than to augment the programming language.") 这些交互式功能包括作业控制，命令行编辑，命令历史记录以及别名[.]("These interactive features include job control, command line editing, command history and aliases.") 这些功能将会在本手册中详细说明[.]("Each of these features is described in this manual.")
 
