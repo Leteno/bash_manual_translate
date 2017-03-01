@@ -7,9 +7,9 @@ source: https://www.gnu.org/software/bash/manual/bash.html
 
 1) 需保留原文，保留方式如下
 ```
-你好，世界[!]("Hello, world!")
+你好，世界[!](# "Hello, world!")
 ```
-你好，世界[!]("Hello, world!")
+你好，世界[!](# "Hello, world!")
 如果你将鼠标移至!会有提示
 
 2) see Chapter3 翻译成 详见 [Chapter3], 方便以后加链接
