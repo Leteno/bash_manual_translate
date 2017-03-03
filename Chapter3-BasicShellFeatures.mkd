@@ -381,3 +381,132 @@ expression1 || expression2
 True 如果expression1 expression2任意一个为true[.](# "True if either expression1 or expression2 is true.")
 
 操作符 && || 可能不会计算expression2，当expression1已经足够去决定整一个语句的True或False的时候[.](# "The && and || operators do not evaluate expression2 if the value of expression1 is sufficient to determine the return value of the entire conditional expression.") (译: 形如 false && a==b, true || c==d, 后者值为多少已经不重要了，唉,论队友的重要性= =)
+
+####3.2.4.3 将命令组合 Grouping Commands
+
+Bash提供了两种方式将commands列表组在一次，作为一个整体执行[.](# "Bash provides two ways to group a list of commands to be executed as a unit.") 当这些命令被组合，重定向会作用到整个命令列表中[.](# "When commands are grouped, redirections may be applied to the entire command list.") 比如, 列表内所有命令的输出都会重定向汇聚到一个流中[.](# "For example, the output of all the commands in the list may be redirected to a single stream.")
+
+()
+```
+( list )
+```
+将一列命令列表放在括号中，会导致一个新的子shell程序空间产生[,](# "Placing a list of commands between parentheses causes a subshell environment to be created (see Command Execution Environment),")(详见: [Command Execution Environment]) 以及列表中的每个命令都会执行在这个空间内[,](# "and each of the commands in list to be executed in that subshell. Since the list is executed in a subshell,") 在子程序结束后里面的变量赋值并不会影响污染到外部[.](# "variable assignments do not remain in effect after the subshell completes.")
+
+{}
+```
+ { list; }
+```
+将一列命令放在大括号之间，会导致命令运行于shell当前上下文环境中[,](# "Placing a list of commands between curly braces causes the list to be executed in the current shell context.") 并不会创建子程序[.](# "No subshell is created.") 在列表末尾的分号或者换行是必须的[.](# "The semicolon (or newline) following list is required.")
+
+除了创不创建子程序外, 他们还有一个小小的区别，有一定历史渊源[.](# "In addition to the creation of a subshell, there is a subtle difference between these two constructs due to historical reasons.") 大括号是保留字, 所以他们必须与列表程序间用空格或其他shell锚字符隔开[.](# "The braces are reserved words, so they must be separated from the list by blanks or other shell metacharacters.") 括号是操作符, 本身就被视为分隔符, 所以根本就不需要空格[.](# "The parentheses are operators, and are recognized as separate tokens by the shell even if they are not separated from the list by whitespace.")
+
+这两个结构的结束状态值都是程序列表的结束状态值[.](# "The exit status of both of these constructs is the exit status of list.")
+
+###3.2.5 协同进程 Coprocesses
+
+协同进程是shell命令前有coproc保留字[.](# "A coprocess is a shell command preceded by the coproc reserved word.") 协同进程会在一个子shell程序中异步执行, 就如同命令末尾是'&'操作符一样[,](# "A coprocess is executed asynchronously in a subshell, as if the command had been terminated with the ‘&’ control operator,") (译: 不同的是)会有两个管道建立在主shell程序与协同进程之间[.](# "with a two-way pipe established between the executing shell and the coprocess.")(译: 想想'&'是异步，且立即返回0)
+
+协同进程的格式如下[:](# "The format for a coprocess is:")
+```
+coproc [NAME] command [redirections]
+```
+这个会创建一个名叫NAME的协同进程[.](# "This creates a coprocess named NAME.") 如果没有提供NAME, 默认名称为COPROC[.](# "If NAME is not supplied, the default name is COPROC.") 如果此时的command是单一命令(详见 [Simple Commands]), 就不要用NAME, 原因是它会被认为是command的一部分[.](# "NAME must not be supplied if command is a simple command (see Simple Commands); otherwise, it is interpreted as the first word of the simple command.")
+
+在执行coprocess的时候, shell会在自己的执行上下文中创建一个名为NAME的数组[.](# "When the coprocess is executed, the shell creates an array variable (see Arrays) named NAME in the context of the executing shell.")(详见: [Arrays]) 命令的标准输出是通过管道连接到主shell程序的一个文件描述符，其值赋予了NAME[0][,](# "The standard output of command is connected via a pipe to a file descriptor in the executing shell, and that file descriptor is assigned to NAME[0].") 其标准输入则是连接到另一个文件描述符，其值为NAME[1][.](# "The standard input of command is connected via a pipe to a file descriptor in the executing shell, and that file descriptor is assigned to NAME[1].") 这个管道是在命令内建立其他重定向之前创建的[.](# "This pipe is established before any redirections specified by the command (see Redirections).")(详见 [Redirections])(译: 也就是说，这只是默认项，可以在命令内自定义重定向流)  文件描述符则是可以用于shell命令的参数以及重定向[.](# "The file descriptors can be utilized as arguments to shell commands and redirections using standard word expansions.") 文件描述符不能直接用于子shell程序中[.](# "The file descriptors are not available in subshells.")(译: 因为文件描述符是在主shell程序空间的)
+
+进程ID是shell程序分化给协同进程的，可以通过变量NAME_PID访问[.](# "The process ID of the shell spawned to execute the coprocess is available as the value of the variable NAME_PID.") 内置命令builtin可以用来等待协同进程结束[.](# "The wait builtin command may be used to wait for the coprocess to terminate.")
+
+当协同进程作为异步命令创建时, coproc命令总是返回成功[.](# "Since the coprocess is created as an asynchronous command, the coproc command always returns success.") (译: 跟&一样) 其返回状态值则是command执行结束状态值[.](# "The return status of a coprocess is the exit status of command.")
+
+###3.2.6 GNU Parallel
+
+并行的执行命令而不依托Bash的方法有很多[.](# "There are ways to run commands in parallel that are not built into Bash.") GNU命令 Parallel 就是其中一种工具[.](# "GNU Parallel is a tool to do just that.")
+
+Parallel, 人如其名, 可以并行地执行命令[.](# "GNU Parallel, as its name suggests, can be used to build and run commands in parallel.") 你可以执行同一个命令用着不同的参数，包括文件名，用户名主机名，或者是文件内的所有行[.](# "You may run the same command with different arguments, whether they are filenames, usernames, hostnames, or lines read from files.") Parallel简化了繁杂的常用操作(存疑[?](# "GNU Parallel provides shorthand references to many of the most common operations (input lines, various portions of the input line, different ways to specify the input source, and so on)."))  Parallel命令会创建Bash多个实例，并把它读取到的数据分发到这些实例中[.](# "Parallel can replace xargs or feed commands from its input sources to several different instances of Bash.")
+
+(译:
+```
+echo -e 'echo helloworld\n echo zheng\n ls' > test.txt
+cat test.txt | parallel
+上述命令就是把3个命令存在test.txt中，
+再读出这些命令分别传给parallel
+(严谨地说parallel命令对文本的分隔符是\n)
+```
+)
+
+更多详情，请看GNU并行的文档[.](# "For a complete description, refer to the GNU Parallel documentation.")  下面是一些对它的使用大致的介绍[.](# "A few examples should provide a brief introduction to its use.")
+
+例如，对当前文件夹包括其子文件夹的所有html文件都执行一次gzip操作[:](# "For example, it is easy to replace xargs to gzip all html files in the current directory and its subdirectories:")
+```
+find . -type f -name '*.html' -print | parallel gzip
+```
+如果你不希望find输出内有一些你所不期待的换行符，可以使用find -print0选项以及parallel的 -0 选项[.](# "If you need to protect special characters such as newlines in file names, use find’s -print0 option and parallel’s -0 option.") (译: find -print0 将结果用\0(NUL)分隔开而不是换行符, parallel -0则是使用NUL作为分隔符)
+
+你也可以使用parallel去移动文件，尤其是在文件数目众多，一个mv操作十分费时[:](# "You can use Parallel to move files from the current directory when the number of files is too large to process with one mv invocation:")
+
+```
+ls | parallel mv {} destdir
+```
+
+如你所见, 符号{}是指代从标准输入每一行内容[.](# "As you can see, the {} is replaced with each line read from standard input.")(译: 当然此时parallel分隔符为'\n') 当然此时ls会获取当前所有文件, 确实太多了[.](# "While using ls will work in most instances, it is not sufficient to deal with all filenames.") 如果你只是需要处理文件名是某特殊字符的，你可以这么做[:](# "If you need to accommodate special characters in filenames, you can use
+find . -depth 1 \! -name '.*' -print0 | parallel -0 mv {} destdir
+as alluded to above.")
+
+```
+find . -depth 1 \! -name '.*' -print0 | parallel -0 mv {} destdir
+```
+
+这个的话，如果当前路劲下有太多文件，则会执行太多次mv操作了[.](# "This will run as many mv commands as there are files in the current directory.") 你可以往parallel命令内添加-X选项[:](# "You can emulate a parallel xargs by adding the -X option:")(译: 据考证，-X会尽可能的把多个参数整合成一个参数，尽可能的意思是命令行的最大长度.)
+
+```
+find . -depth 1 \! -name '.*' -print0 | parallel -0 -X mv {} destdir
+```
+
+GNU Parallel命令可以替代下面这种“读取文件中的命令，并执行”的习惯用法[:](# "GNU Parallel can replace certain common idioms that operate on lines read from a file (in this case, filenames listed one per line):")(在下面的例子中，文件名是一行一个的)
+
+```
+	while IFS= read -r x; do
+		do-something1 "$x" "config-$x"
+		do-something2 < "$x"
+	done < file | process-output
+```
+
+替代为[:](# "with a more compact syntax reminiscent of lambdas:")
+
+```
+cat list | parallel "do-something1 {} config-{} ; do-something2 < {}" | process-output
+```
+
+Parallel使用了一套内置的手段去删除文件扩展名，批处理地转换文件形式以及重命名[:](# "Parallel provides a built-in mechanism to remove filename extensions, which lends itself to batch file transformations or renaming:")
+
+```
+ls *.gz | parallel -j+0 "zcat {} | bzip2 >{.}.bz2 && rm {}"
+```
+
+上述这个会用bzip2命令重新压缩当前路劲下的所有以.gz结尾文件[,](# "This will recompress all files in the current directory with names ending in .gz using bzip2,")  并行地每个CPU只执行一个作业(-j+0)[.](# "running one job per CPU (-j+0) in parallel.") (简洁起见，我们此处用ls，相比于强大的find命令可以更准确的定位需要的文件)[.](# "(We use ls for brevity here; using find as above is more robust in the face of filenames containing unexpected characters.)") Parallel也可以从命令行中直接读取参数[;](# "Parallel can take arguments from the command line;") 上面的也可以这么写[:](# "the above can also be written as")
+
+```
+parallel "zcat {} | bzip2 >{.}.bz2 && rm {}" ::: *.gz
+```
+
+如果执行的命令会有输出，而且你想让它们按照输入时的顺序排列的话，例如以下[:](# "If a command generates output, you may want to preserve the input order in the output. For instance, the following command")
+
+```
+{ echo foss.org.my ; echo debian.org; echo freenetproject.org; } | parallel traceroute
+```
+
+最后的输出结果只会按照traceroute执行结束的先后顺序[.](# "will display as output the traceroute invocation that finishes first.")(译: 而不是输入时的先后顺序) 快用-k选项[:](# "Adding the -k option")
+
+```
+{ echo foss.org.my ; echo debian.org; echo freenetproject.org; } | parallel -k traceroute
+```
+
+这个会确保traceroute foss.org.my的输出会先输出来[.](# "will ensure that the output of traceroute foss.org.my is displayed first.")
+
+最后, Parallel可以用来并行地执行一段shell命令[,](# "Finally, Parallel can be used to run a sequence of shell commands in parallel,") 类似于'cat file | bash'[.](# "similar to ‘cat file | bash’.") 取一个文件列表，创建一系列操作该文件列表的shell命令，让一个shell程序去执行这些命令，这样的操作是不常见的[.](# "It is not uncommon to take a list of filenames, create a series of shell commands to operate on them, and feed that list of commnds to a shell.") Parallel可以加速这个过程[.](# "Parallel can speed this up.") 设想有个命令包含一系列shell命令，一行一个[:](# "Assuming that file contains a list of shell commands, one per line,")
+
+```
+parallel -j 10 < file
+```
+
+这个会在shell程序中执行这些命令[,](# "will evaluate the commands using the shell") (since no explicit command is supplied as an argument), 一次10个作业[.](# "in blocks of ten shell jobs at a time.")
