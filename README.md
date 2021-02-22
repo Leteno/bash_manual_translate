@@ -15,3 +15,10 @@ source: https://www.gnu.org/software/bash/manual/bash.html
 2) see Chapter3 翻译成 详见 [Chapter3], 方便以后加链接
 
 3) 有更好的想法，break 1,2
+
+
+后面发现这个已经有人翻好了，热情骤减，没必要重复造轮子了：https://download.csdn.net/download/kcuwxl2/10754680 
+
+工作了 5 年了，觉得读英文文档的能力，对计算机很重要，有些地方，原汁原味可能更加容易看懂。
+想当时，我还敬佩我的一个年长的朋友能够读下英文文档，而我自己却坑吃坑吃。
+现在会过头再想想，其实也没那么难，贵在开头，贵在坚持。
